@@ -31,7 +31,12 @@ LiquidCrystal_I2C lcd(0x27, 2, 1, 0, 4, 5, 6, 7, 3, POSITIVE);  // Set the LCD I
 ClickEncoder *encoder;
 uint8_t last, value;
 uint8_t mode = 0;
+uint8_t CorB = 0;
 uint8_t clicked = 0;
+uint8_t dbclicked = 0;
+long timeOut;
+uint8_t interval = 80;
+uint16_t lastInteveral = 80;
 
 
 
@@ -53,42 +58,62 @@ void setup()
 	Timer1.initialize(1000);
 	Timer1.attachInterrupt(timerIsr);
 
+	// initialize timout
 	last = -1;
+	timeOut = millis();
+
+	// intitialize last delay to current so doesn't run till it changes
+	lastInteveral = interval;
 
 	lcd.backlight();
-	// set cursor to positon x=0, y=0
+	// print starting screen
 	lcd.setCursor(0, 0);
-	// print Hello!
-	lcd.print("value=");
-	// wait a second.
+	// starts with value most used setting
+	lcd.print("color=");
+	lcd.setCursor(14, 0);
+	// print mode in top right
+	lcd.print('m');
+	lcd.print(mode);
 	delay(1000);
 }
 
 
 void loop()
 {
-	value += encoder->getValue();
+	if (CorB == 0) {
+		value += encoder->getValue();
+	}
+	else if (CorB == 1) {
+		interval += encoder->getValue();
+	}
 
 	if (value != last) {
 		last = value;
 		lcd.setCursor(6, 0);
 		lcd.print(value);
 		lcd.print("    ");
-		Serial.print("Encoder Value: ");
-		Serial.println(value);
-		Serial.println("--------------");
-		//fill_solid(leds, NUM_LEDS, CHSV(value, 255, 255));
 	}
-	delay(80);
-	switch (mode) {
-		case 0:
-			confetti();
-			break;
-		case 1:
-			confetti();
-			break;
-		case 2:
-			fill_solid(leds, NUM_LEDS, CHSV(value, 255, 255));
+	else if (interval != lastInteveral) {
+		lastInteveral = interval;
+		lcd.setCursor(6, 0);
+		lcd.print(interval);
+		lcd.print("    ");
+	}
+
+	if (millis() > timeOut) {
+		timeOut = millis() + interval;
+
+
+		switch (mode) {
+			case 0:
+				confetti();
+				break;
+			case 1:
+				confetti();
+				break;
+			case 2:
+				fill_solid(leds, NUM_LEDS, CHSV(value, 255, 255));
+		}
 	}
 	FastLED.show();
 
@@ -98,21 +123,28 @@ void loop()
 	if (b != ClickEncoder::Open) {
 		switch (b) {
 		case ClickEncoder::Clicked:
-			lcd.setCursor(0, 1);
-			lcd.print("clicked                ");
+			clicked++;
+			CorB = clicked % 2;
+			if (CorB == 0) {
+				lcd.setCursor(0, 0);
+				lcd.print("color=");
+			}
+			else {
+				lcd.setCursor(0, 0);
+				lcd.print("intvl=");
+				lcd.setCursor(6, 0);
+				lcd.print(interval);
+			}
 			break;
 
 		case ClickEncoder::DoubleClicked:
-			lcd.setCursor(0, 1);
-			lcd.print("double clicked");
-			clicked++;
-			mode = clicked % 3;
-			lcd.setCursor(15, 0);
+			dbclicked++;
+			mode = dbclicked % 3;
+			lcd.setCursor(14, 0);
+			lcd.print('M');
 			lcd.print(mode);
 			break;
 		case ClickEncoder::Held:
-			lcd.setCursor(0, 1);
-			lcd.print("Button Held      ");
 			break;
 		}
 	}
