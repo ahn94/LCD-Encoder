@@ -30,6 +30,8 @@ LiquidCrystal_I2C lcd(0x27, 2, 1, 0, 4, 5, 6, 7, 3, POSITIVE);  // Set the LCD I
 
 ClickEncoder *encoder;
 uint8_t last, value;
+uint8_t mode = 0;
+uint8_t clicked = 0;
 
 
 
@@ -78,8 +80,43 @@ void loop()
 		//fill_solid(leds, NUM_LEDS, CHSV(value, 255, 255));
 	}
 	delay(80);
-	confetti();
+	switch (mode) {
+		case 0:
+			confetti();
+			break;
+		case 1:
+			confetti();
+			break;
+		case 2:
+			fill_solid(leds, NUM_LEDS, CHSV(value, 255, 255));
+	}
 	FastLED.show();
+
+	
+	ClickEncoder::Button b = encoder->getButton();
+
+	if (b != ClickEncoder::Open) {
+		switch (b) {
+		case ClickEncoder::Clicked:
+			lcd.setCursor(0, 1);
+			lcd.print("clicked                ");
+			break;
+
+		case ClickEncoder::DoubleClicked:
+			lcd.setCursor(0, 1);
+			lcd.print("double clicked");
+			clicked++;
+			mode = clicked % 3;
+			lcd.setCursor(15, 0);
+			lcd.print(mode);
+			break;
+		case ClickEncoder::Held:
+			lcd.setCursor(0, 1);
+			lcd.print("Button Held      ");
+			break;
+		}
+	}
+
 }
 
 void confetti()
@@ -87,5 +124,10 @@ void confetti()
 	// random colored speckles that blink in and fade smoothly
 	fadeToBlackBy(leds, NUM_LEDS, 35);//long strip used five
 	int pos = random16(NUM_LEDS);
-	leds[pos] += CHSV(value + random8(64),255, 255);
+	if (mode == 0) {
+		leds[pos] += CHSV(value + random8(64), 255, 255);
+	}
+	else if (mode == 1) {
+		leds[pos] += CHSV(value, 255, 255);
+	}
 }
