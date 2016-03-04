@@ -37,6 +37,7 @@ uint8_t dbclicked = 0;
 long timeOut;
 uint8_t interval = 80;
 uint16_t lastInteveral = 80;
+uint8_t color;
 
 
 
