@@ -28,6 +28,11 @@ CRGB leds[NUM_LEDS];
 //                    addr, en,rw,rs,d4,d5,d6,d7,bl,blpol
 LiquidCrystal_I2C lcd(0x27, 2, 1, 0, 4, 5, 6, 7, 3, POSITIVE);  // Set the LCD I2C address
 
+#define NUM_MODES 2
+uint8_t nOptions[] = { 4, 3 };
+
+uint8_t currentOption;
+
 ClickEncoder *encoder;
 uint8_t last, value;
 uint8_t mode = 0;
@@ -82,14 +87,8 @@ void setup()
 void loop()
 {
 
-	value += encoder->getValue();
-	if (value != last) {
-		last = value;
-		lcd.setCursor(6, 0);
-		lcd.print(value);
-		lcd.print("    ");
-	}
 
+	displayMenu();
 
 	if (millis() > timeOut) {
 		timeOut = millis() + interval;
@@ -100,10 +99,8 @@ void loop()
 				confetti();
 				break;
 			case 1:
-				confetti();
-				break;
-			case 2:
 				fill_solid(leds, NUM_LEDS, CHSV(value, 255, 255));
+				break;
 		}
 	}
 	FastLED.show();
@@ -115,22 +112,12 @@ void loop()
 		switch (b) {
 		case ClickEncoder::Clicked:
 			clicked++;
-			CorB = clicked % 2;
-			if (CorB == 0) {
-				lcd.setCursor(0, 0);
-				lcd.print("color=");
-			}
-			else {
-				lcd.setCursor(0, 0);
-				lcd.print("intvl=");
-				lcd.setCursor(6, 0);
-				lcd.print(interval);
-			}
+			currentOption = clicked % nOptions[mode];
 			break;
-
 		case ClickEncoder::DoubleClicked:
 			dbclicked++;
-			mode = dbclicked % 3;
+			mode = dbclicked % NUM_MODES;
+			currentOption = 0;
 			lcd.setCursor(14, 0);
 			lcd.print('M');
 			lcd.print(mode);
@@ -147,10 +134,18 @@ void confetti()
 	// random colored speckles that blink in and fade smoothly
 	fadeToBlackBy(leds, NUM_LEDS, 35);//long strip used five
 	int pos = random16(NUM_LEDS);
-	if (mode == 0) {
-		leds[pos] += CHSV(value + random8(64), 255, 255);
+	leds[pos] += CHSV(value + random8(64), 255, 255);
+}
+
+void displayMenu()
+{
+	int increment;
+	value = encoder->getValue();
+	if (value != 0) {
+		last = value;
+		lcd.setCursor(6, 0);
+		lcd.print(value);
+		lcd.print("    ");
 	}
-	else if (mode == 1) {
-		leds[pos] += CHSV(value, 255, 255);
-	}
+
 }
