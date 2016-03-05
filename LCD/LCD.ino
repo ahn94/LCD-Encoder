@@ -81,25 +81,15 @@ void setup()
 
 void loop()
 {
-	if (CorB == 0) {
-		value += encoder->getValue();
-	}
-	else if (CorB == 1) {
-		interval += encoder->getValue();
-	}
 
+	value += encoder->getValue();
 	if (value != last) {
 		last = value;
 		lcd.setCursor(6, 0);
 		lcd.print(value);
 		lcd.print("    ");
 	}
-	else if (interval != lastInteveral) {
-		lastInteveral = interval;
-		lcd.setCursor(6, 0);
-		lcd.print(interval);
-		lcd.print("    ");
-	}
+
 
 	if (millis() > timeOut) {
 		timeOut = millis() + interval;
