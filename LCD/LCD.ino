@@ -1,23 +1,14 @@
 #include <FastLED.h>
-
-#define WITH_LCD 1
-// See Library "Docs" folder for possible commands etc.
 #include <ClickEncoder.h>
 #include <TimerOne.h>
 #include <LiquidCrystal_I2C.h>
 
 
-#define LCD_CHARS   16
-#define LCD_LINES    2
-
-
-// How many leds are in the strip?
-#define NUM_LEDS 16
-
-// Data pin that led data will be written out over
-#define DATA_PIN 2
-
-#define LED_TYPE    WS2812
+#define LCD_CHARS   16		// columns
+#define LCD_LINES    2		// rows
+#define NUM_LEDS 16			// number of leds
+#define DATA_PIN 2			// led data pin
+#define LED_TYPE    WS2812	// led type
 
 
 // This is an array of leds.  One item for each led in your strip.
@@ -28,21 +19,31 @@ CRGB leds[NUM_LEDS];
 //                    addr, en,rw,rs,d4,d5,d6,d7,bl,blpol
 LiquidCrystal_I2C lcd(0x27, 2, 1, 0, 4, 5, 6, 7, 3, POSITIVE);  // Set the LCD I2C address
 
-#define NUM_MODES 2
-uint8_t nOptions[] = { 4, 3 };
+ClickEncoder *encoder;	// pointer to encoder
+uint8_t increment;		// encoder output stored here every loop
 
-uint8_t currentOption;
+// general menu variables
+#define NUM_MODES 3					// number of modes;
+uint8_t nOptions[] = { 4, 3, 3 };	// options per mode;
+uint8_t currentOption;				// option for current mode
+uint8_t mode = 0;					// current mode
+uint8_t clicked = 0;				// used to % = cycle through options for current mode
+uint8_t dbclicked = 0;				// used to % = cycle through modes
+long timeOut = -1;					// timout
 
-ClickEncoder *encoder;
-uint8_t mode = 0;
-uint8_t clicked = 0;
-uint8_t dbclicked = 0;
-long timeOut;
-uint8_t interval = 80;
-uint8_t hue;
-uint8_t sat = 255;
-uint8_t bright = 100;
-uint8_t increment;
+// general color settings
+uint8_t hue;			// hue or color 
+uint8_t sat = 255;		// saturation
+uint8_t bright = 100;	// brightness
+
+// loop delay
+uint8_t interval = 80;	// timing speed for animation
+
+// rainbow settings
+uint8_t deltaHue = 7;	// DeltaHue for rainbow adjustment
+uint8_t rHue = 0;		// rainbow rotating hue
+uint8_t rInterval = 0;	// rainbow interval
+
 
 
 
@@ -56,21 +57,19 @@ void timerIsr() {
 
 void setup()
 {
-
 	// initialize LEDS
-	LEDS.setBrightness(100);
+	LEDS.setBrightness(255);
 	FastLED.addLeds<WS2812B, DATA_PIN, GRB>(leds, NUM_LEDS).setCorrection(TypicalLEDStrip);
 	
-	// initialize library
-	lcd.begin(LCD_CHARS, LCD_LINES);
+	// initialize encoder & timer
 	encoder = new ClickEncoder(A1, A0, A2, 4);
 	encoder->setAccelerationEnabled(true);
 	Timer1.initialize(1000);
 	Timer1.attachInterrupt(timerIsr);
-	
 	timeOut = millis(); // initilaze timout
 	
 	// initialize display
+	lcd.begin(LCD_CHARS, LCD_LINES);
 	lcd.backlight();
 	display(0);
 	delay(1000);
@@ -80,19 +79,24 @@ void setup()
 void loop()
 {
 	increment = encoder->getValue();
-
-	display(increment);
+	if (increment != 0) {
+		display(increment);
+	}
 
 	if (millis() > timeOut) {
 		timeOut = millis() + interval;
-
-
 		switch (mode) {
 			case 0:
+				FastLED.delay(interval);
 				confetti();
 				break;
 			case 1:
 				fill_solid(leds, NUM_LEDS, CHSV(hue, sat, bright));
+				break;
+			case 2:
+				fill_rainbow(leds, NUM_LEDS, rHue, deltaHue);
+				FastLED.setBrightness(bright);
+				rHue += 5;
 				break;
 		}
 	}
@@ -106,6 +110,7 @@ void loop()
 		case ClickEncoder::Clicked:
 			clicked++;
 			currentOption = clicked % nOptions[mode];
+			display(0);
 			break;
 		case ClickEncoder::DoubleClicked:
 			dbclicked++;
@@ -167,6 +172,26 @@ void display(uint8_t incr)
 			lcd.setCursor(0, 1);
 			lcd.print("solid   ");
 			break;
+		case 2: // rainbow mode
+			switch (currentOption)
+			{
+				case 0: // interval option
+					interval += incr;
+					adjustInterval(); // print interval option
+					break;
+				case 1: // huedelta option
+					deltaHue += incr;
+					adjustDeltaHue(); // print saturation display
+					break;
+				case 2: // brightness option
+					bright += incr;
+					adjustBrightness(); // print brightness display 
+					break;
+			
+			}
+			lcd.setCursor(0, 1);
+			lcd.print("rainbow ");
+			break;
 	}
 	// format/print second line of display
 	lcd.setCursor(10, 1);
@@ -182,7 +207,6 @@ void confetti()
 	int pos = random16(NUM_LEDS);
 	leds[pos] += CHSV(hue + random8(64), sat, bright);
 }
-
 
 void adjustHue()
 {
@@ -217,5 +241,14 @@ void adjustInterval()
 	lcd.print("Interval=");
 	lcd.setCursor(9, 0);
 	lcd.print(interval);
+	lcd.print("    ");
+}
+
+void adjustDeltaHue()
+{
+	lcd.setCursor(0, 0);
+	lcd.print("deltahue=");
+	lcd.setCursor(9, 0);
+	lcd.print(deltaHue);
 	lcd.print("    ");
 }
