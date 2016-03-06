@@ -116,6 +116,7 @@ void loop()
 			dbclicked++;
 			currentOption = 0;
 			clicked = 0;
+			FastLED.setBrightness(255);
 			mode = dbclicked % NUM_MODES;
 			display(0);
 			break;
