@@ -27,7 +27,7 @@ uint8_t increment;		// encoder output stored here every loop
 #define NUM_MODES 4					// number of modes;
 uint8_t nOptions[] = { 4, 3, 3 , 1};	// options per mode;
 uint8_t currentOption;				// option for current mode
-uint8_t mode = 0;					// current mode
+uint8_t mode = 3;					// current mode
 uint8_t clicked = 0;				// used to % = cycle through options for current mode
 uint8_t dbclicked = 0;				// used to % = cycle through modes
 long timeOut = -1;					// timout
@@ -38,7 +38,7 @@ uint8_t sat = 255;		// saturation
 uint8_t bright = 255;	// brightness
 
 // loop delay
-uint8_t interval = 40;	// timing speed for animation
+uint8_t interval = 70;	// timing speed for animation
 
 // rainbow settings
 uint8_t deltaHue = 3;	// DeltaHue for rainbow adjustment
@@ -102,7 +102,7 @@ void loop()
 				rHue += 2;
 				break;
 			case 3:
-				fill_solid(leds, NUM_LEDS, CHSV(hue, sat, bright));
+				fill_solid(leds, NUM_LEDS, CHSV(rHue, sat, bright));
 				rHue += 2;
 				break;
 		}
@@ -236,6 +236,7 @@ void confetti()
 	fadeToBlackBy(leds, NUM_LEDS, 5);//long strip used five
 	leds[random16(NUM_LEDS)] += CHSV(hue + random8(64), sat, bright);
 	leds[random16(NUM_LEDS)] += CHSV(hue + random8(64), sat, bright);
+
 }
 
 void adjustHue()
