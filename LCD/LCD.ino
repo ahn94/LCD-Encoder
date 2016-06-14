@@ -24,8 +24,8 @@ ClickEncoder *encoder;	// pointer to encoder
 uint8_t increment;		// encoder output stored here every loop
 
 // general menu variables
-#define NUM_MODES 3					// number of modes;
-uint8_t nOptions[] = { 4, 3, 3 };	// options per mode;
+#define NUM_MODES 4					// number of modes;
+uint8_t nOptions[] = { 4, 3, 3 , 1};	// options per mode;
 uint8_t currentOption;				// option for current mode
 uint8_t mode = 0;					// current mode
 uint8_t clicked = 0;				// used to % = cycle through options for current mode
@@ -99,6 +99,10 @@ void loop()
 			case 2:
 				fill_rainbow(leds, NUM_LEDS, rHue, deltaHue);
 				FastLED.setBrightness(bright);
+				rHue += 2;
+				break;
+			case 3:
+				fill_solid(leds, NUM_LEDS, CHSV(hue, sat, bright));
 				rHue += 2;
 				break;
 		}
@@ -205,6 +209,12 @@ void display(uint8_t incr)
 			}
 			lcd.setCursor(0, 0);
 			lcd.print("      RAINBOW      ");
+			break;
+		case 3: // rainbow pulse
+			interval += incr;
+			adjustInterval();
+			lcd.setCursor(0, 0);
+			lcd.print("       PULSE        ");
 			break;
 	}
 	// format/print second line of display
