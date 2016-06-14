@@ -129,12 +129,12 @@ void loop()
 			break;
 		case ClickEncoder::Held:
 			if (lightOn) {
-				lcd.off();
+				lcd.noBacklight();
 				lightOn = false;
 				delay(500);
 			} 
 			else {
-				lcd.on();
+				lcd.backlight();
 				lightOn = true;
 				delay(500);
 			}
@@ -233,9 +233,7 @@ void display(uint8_t incr)
 void confetti()
 {
 	// random colored speckles that blink in and fade smoothly
-	fadeToBlackBy(leds, NUM_LEDS, 2);//long strip used five
-	leds[random16(NUM_LEDS)] += CHSV(hue + random8(64), sat, bright);
-	leds[random16(NUM_LEDS)] += CHSV(hue + random8(64), sat, bright);
+	fadeToBlackBy(leds, NUM_LEDS, 5);//long strip used five
 	leds[random16(NUM_LEDS)] += CHSV(hue + random8(64), sat, bright);
 	leds[random16(NUM_LEDS)] += CHSV(hue + random8(64), sat, bright);
 }
