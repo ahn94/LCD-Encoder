@@ -4,11 +4,12 @@
 #include <LiquidCrystal_I2C.h>
 
 
-#define LCD_CHARS   16		// columns
-#define LCD_LINES    2		// rows
-#define NUM_LEDS 16			// number of leds
-#define DATA_PIN 2			// led data pin
-#define LED_TYPE    WS2812	// led type
+#define LCD_CHARS   20		// columns
+#define LCD_LINES    4		// rows
+#define NUM_LEDS 147		// number of leds
+#define DATA_PIN 2	
+// led data pin
+#define LED_TYPE    WS2812B	// led type
 
 
 // This is an array of leds.  One item for each led in your strip.
@@ -32,17 +33,19 @@ uint8_t dbclicked = 0;				// used to % = cycle through modes
 long timeOut = -1;					// timout
 
 // general color settings
-uint8_t hue;			// hue or color 
+uint8_t hue = 87;			// hue or color 
 uint8_t sat = 255;		// saturation
-uint8_t bright = 100;	// brightness
+uint8_t bright = 255;	// brightness
 
 // loop delay
-uint8_t interval = 80;	// timing speed for animation
+uint8_t interval = 40;	// timing speed for animation
 
 // rainbow settings
-uint8_t deltaHue = 7;	// DeltaHue for rainbow adjustment
-uint8_t rHue = 0;		// rainbow rotating hue
-uint8_t rInterval = 0;	// rainbow interval
+uint8_t deltaHue = 3;	// DeltaHue for rainbow adjustment
+uint8_t rHue = 87;		// rainbow rotating hue
+
+// backlight toggle
+bool lightOn = true;
 
 
 
@@ -96,7 +99,7 @@ void loop()
 			case 2:
 				fill_rainbow(leds, NUM_LEDS, rHue, deltaHue);
 				FastLED.setBrightness(bright);
-				rHue += 5;
+				rHue += 2;
 				break;
 		}
 	}
@@ -121,6 +124,16 @@ void loop()
 			display(0);
 			break;
 		case ClickEncoder::Held:
+			if (lightOn) {
+				lcd.off();
+				lightOn = false;
+				delay(500);
+			} 
+			else {
+				lcd.on();
+				lightOn = true;
+				delay(500);
+			}
 			break;
 		}
 	}
@@ -151,8 +164,8 @@ void display(uint8_t incr)
 					adjustInterval(); // print interval option
 					break;
 			}
-			lcd.setCursor(0, 1);
-			lcd.print("confetti");
+			lcd.setCursor(0, 0);
+			lcd.print("      CONFETTI      ");
 			break;
 		case 1: // solid color mode
 			switch (currentOption) // Options displayer switch
@@ -170,8 +183,8 @@ void display(uint8_t incr)
 					adjustBrightness(); // print brightness display 
 					break;
 			}
-			lcd.setCursor(0, 1);
-			lcd.print("solid   ");
+			lcd.setCursor(0, 0);
+			lcd.print("       SOLID       ");
 			break;
 		case 2: // rainbow mode
 			switch (currentOption)
@@ -190,66 +203,79 @@ void display(uint8_t incr)
 					break;
 			
 			}
-			lcd.setCursor(0, 1);
-			lcd.print("rainbow ");
+			lcd.setCursor(0, 0);
+			lcd.print("      RAINBOW      ");
 			break;
 	}
 	// format/print second line of display
-	lcd.setCursor(10, 1);
+	lcd.setCursor(0, 2);
+	lcd.print("OPTION |");
+	lcd.setCursor(0, 3);
+
 	lcd.print(currentOption + 1);
 	lcd.print(" of ");
 	lcd.print(nOptions[mode]);
+	lcd.print(" | ");
+	lcd.setCursor(0, 1);
+	lcd.print("--------------------");
 }
 
 void confetti()
 {
 	// random colored speckles that blink in and fade smoothly
-	fadeToBlackBy(leds, NUM_LEDS, 35);//long strip used five
-	int pos = random16(NUM_LEDS);
-	leds[pos] += CHSV(hue + random8(64), sat, bright);
+	fadeToBlackBy(leds, NUM_LEDS, 2);//long strip used five
+	leds[random16(NUM_LEDS)] += CHSV(hue + random8(64), sat, bright);
+	leds[random16(NUM_LEDS)] += CHSV(hue + random8(64), sat, bright);
+	leds[random16(NUM_LEDS)] += CHSV(hue + random8(64), sat, bright);
+	leds[random16(NUM_LEDS)] += CHSV(hue + random8(64), sat, bright);
 }
 
 void adjustHue()
 {
-	lcd.setCursor(0, 0);
-	lcd.print("Hue=");
-	lcd.setCursor(4, 0);
+	lcd.setCursor(9, 2);
+	lcd.print("COLOR     ");
+	lcd.setCursor(9, 3);
+	lcd.print("[");
 	lcd.print(hue);
-	lcd.print("         ");
+	lcd.print("]    ");
 }
 
 void adjustSaturation()
 {
-	lcd.setCursor(0, 0);
-	lcd.print("Saturation=");
-	lcd.setCursor(11, 0);
+	lcd.setCursor(9, 2);
+	lcd.print("SATURATION   ");
+	lcd.setCursor(9, 3);
+	lcd.print("[");
 	lcd.print(sat);
-	lcd.print("  ");
+	lcd.print("]    ");
 }
 
 void adjustBrightness()
 {
-	lcd.setCursor(0, 0);
-	lcd.print("Brightness=");
-	lcd.setCursor(11, 0);
+	lcd.setCursor(9, 2);
+	lcd.print("BRIGHTNESS     ");
+	lcd.setCursor(9, 3);
+	lcd.print("[");
 	lcd.print(bright);
-	lcd.print("  ");
+	lcd.print("]    ");
 }
 
 void adjustInterval()
 {
-	lcd.setCursor(0, 0);
-	lcd.print("Interval=");
-	lcd.setCursor(9, 0);
+	lcd.setCursor(9, 2);
+	lcd.print("SPEED       ");
+	lcd.setCursor(9, 3);
+	lcd.print("[");
 	lcd.print(interval);
-	lcd.print("    ");
+	lcd.print("]    ");
 }
 
 void adjustDeltaHue()
 {
-	lcd.setCursor(0, 0);
-	lcd.print("deltahue=");
-	lcd.setCursor(9, 0);
+	lcd.setCursor(9, 2);
+	lcd.print("DELTAHUE      ");
+	lcd.setCursor(9, 3);
+	lcd.print("[");
 	lcd.print(deltaHue);
-	lcd.print("    ");
+	lcd.print("]    ");
 }
