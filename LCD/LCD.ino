@@ -9,7 +9,7 @@
 #define NUM_LEDS 147		// number of leds
 #define DATA_PIN 2			// led data pin
 #define LED_TYPE    WS2812B	// led type
-
+// lcd preset
 
 // This is an array of leds.  One item for each led in your strip.
 CRGB leds[NUM_LEDS];
