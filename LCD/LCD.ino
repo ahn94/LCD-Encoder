@@ -2,7 +2,7 @@
 #include <ClickEncoder.h>
 #include <TimerOne.h>
 #include <LiquidCrystal_I2C.h>
-// test test test lcd presets
+// this should finally be tracked by the second branch and not the master
 
 #define LCD_CHARS   20		// columns
 #define LCD_LINES    4		// rows
