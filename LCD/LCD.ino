@@ -2,7 +2,7 @@
 #include <ClickEncoder.h>
 #include <TimerOne.h>
 #include <LiquidCrystal_I2C.h>
-
+// test test test lcd presets
 
 #define LCD_CHARS   20		// columns
 #define LCD_LINES    4		// rows
@@ -35,7 +35,7 @@ long timeOut = -1;					// timout
 // general color settings
 uint8_t hue = 87;			// hue or color 
 uint8_t sat = 255;		// saturation
-uint8_t bright = 255;	// brightness
+uint8_t bright = 180;	// brightness
 
 // loop delay
 uint8_t interval = 70;	// timing speed for animation
