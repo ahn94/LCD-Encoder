@@ -2,7 +2,10 @@
 #include <ClickEncoder.h>
 #include <TimerOne.h>
 #include <LiquidCrystal_I2C.h>
-
+//
+//
+//
+//
 
 #define LCD_CHARS   20		// columns
 #define LCD_LINES    4		// rows
