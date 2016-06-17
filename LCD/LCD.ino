@@ -26,22 +26,26 @@ uint8_t increment;		// encoder output stored here every loop
 #define NUM_MODES 4					// number of modes;
 uint8_t nOptions[] = { 4, 3, 3 , 1};	// options per mode;
 uint8_t currentOption;				// option for current mode
-uint8_t mode = 3;					// current mode
+uint8_t mode = 0;					// current mode
 uint8_t clicked = 0;				// used to % = cycle through options for current mode
 uint8_t dbclicked = 0;				// used to % = cycle through modes
 long timeOut = -1;					// timout
 
-// general color settings
-uint8_t hue = 87;			// hue or color 
-uint8_t sat = 255;		// saturation
-uint8_t bright = 180;	// brightness
+// confetti color settings
+// { hue, saturation, brightness, interval }
+uint8_t confeti[] = { 87, 255, 255, 26 };
 
-// loop delay
-uint8_t interval = 70;	// timing speed for animation
+// solid color settings
+// { hue, saturation, brightness, interval}
+uint8_t solid[] = { 0, 255, 255, 255 };
 
-// rainbow settings
-uint8_t deltaHue = 3;	// DeltaHue for rainbow adjustment
-uint8_t rHue = 87;		// rainbow rotating hue
+// rainbow setting
+// { hue, saturation, brightness, interval, deltaHue }
+uint8_t rainbow[] = { 0, 255, 180, 80, 3 };
+
+// pulse setting
+// { hue, saturation, brightness, interval }
+uint8_t pulse[] = { 0, 255, 180 , 70};
 
 // backlight toggle
 bool lightOn = true;
@@ -86,23 +90,25 @@ void loop()
 	}
 
 	if (millis() > timeOut) {
-		timeOut = millis() + interval;
 		switch (mode) {
 			case 0:
-				FastLED.delay(interval);
+				timeOut = millis() + confeti[3];
 				confetti();
 				break;
 			case 1:
-				fill_solid(leds, NUM_LEDS, CHSV(hue, sat, bright));
+				timeOut = millis() + solid[3];
+				fill_solid(leds, NUM_LEDS, CHSV(solid[0], solid[1], solid[2]));
 				break;
 			case 2:
-				fill_rainbow(leds, NUM_LEDS, rHue, deltaHue);
-				FastLED.setBrightness(bright);
-				rHue += 2;
+				timeOut = millis() + rainbow[3];
+				fill_rainbow(leds, NUM_LEDS, rainbow[0], rainbow[4]);
+				FastLED.setBrightness(rainbow[2]);
+				rainbow[0] += 2;
 				break;
 			case 3:
-				fill_solid(leds, NUM_LEDS, CHSV(rHue, sat, bright));
-				rHue += 2;
+				timeOut = millis() + pulse[3];
+				fill_solid(leds, NUM_LEDS, CHSV(pulse[0], pulse[1], pulse[2]));
+				pulse[0] += 2;
 				break;
 		}
 	}
@@ -151,20 +157,20 @@ void display(uint8_t incr)
 			switch (currentOption) // Options displayer switch
 			{
 				case 0: // color option
-					hue += incr;
-					adjustHue(); // print color display
+					confeti[0] += incr;
+					adjustHue(confeti[0]); // print color display
 					break;
 				case 1: // saturation option
-					sat += incr; 
-					adjustSaturation(); // print saturation display
+					confeti[1] += incr; 
+					adjustSaturation(confeti[1]); // print saturation display
 					break;
 				case 2: // brightness option
-					bright += incr;
-					adjustBrightness(); // print brightness display 
+					confeti[2] += incr;
+					adjustBrightness(confeti[2]); // print brightness display 
 					break;
 				case 3: // interval option
-					interval += incr;
-					adjustInterval(); // print interval option
+					confeti[3] += incr;
+					adjustInterval(confeti[3]); // print interval option
 					break;
 			}
 			lcd.setCursor(0, 0);
@@ -174,16 +180,16 @@ void display(uint8_t incr)
 			switch (currentOption) // Options displayer switch
 			{
 				case 0: // color option
-					hue += incr;
-					adjustHue(); // print color display
+					solid[0] += incr;
+					adjustHue(solid[0]); // print color display
 					break;
 				case 1: // saturation option
-					sat += incr;
-					adjustSaturation(); // print saturation display
+					solid[1] += incr;
+					adjustSaturation(solid[1]); // print saturation display
 					break;
 				case 2: // brightness option
-					bright += incr;
-					adjustBrightness(); // print brightness display 
+					solid[2] += incr;
+					adjustBrightness(solid[2]); // print brightness display 
 					break;
 			}
 			lcd.setCursor(0, 0);
@@ -193,16 +199,16 @@ void display(uint8_t incr)
 			switch (currentOption)
 			{
 				case 0: // interval option
-					interval += incr;
-					adjustInterval(); // print interval option
+					rainbow[3] += incr;
+					adjustInterval(rainbow[3]); // print interval option
 					break;
 				case 1: // huedelta option
-					deltaHue += incr;
-					adjustDeltaHue(); // print saturation display
+					rainbow[4] += incr;
+					adjustDeltaHue(rainbow[4]); // print saturation display
 					break;
 				case 2: // brightness option
-					bright += incr;
-					adjustBrightness(); // print brightness display 
+					rainbow[2] += incr;
+					adjustBrightness(rainbow[2]); // print brightness display 
 					break;
 			
 			}
@@ -210,8 +216,8 @@ void display(uint8_t incr)
 			lcd.print("      RAINBOW      ");
 			break;
 		case 3: // rainbow pulse
-			interval += incr;
-			adjustInterval();
+			pulse[3] += incr;
+			adjustInterval(pulse[3]);
 			lcd.setCursor(0, 0);
 			lcd.print("       PULSE        ");
 			break;
@@ -232,13 +238,11 @@ void display(uint8_t incr)
 void confetti()
 {
 	// random colored speckles that blink in and fade smoothly
-	fadeToBlackBy(leds, NUM_LEDS, 5);//long strip used five
-	leds[random16(NUM_LEDS)] += CHSV(hue + random8(64), sat, bright);
-	leds[random16(NUM_LEDS)] += CHSV(hue + random8(64), sat, bright);
-
+	fadeToBlackBy(leds, NUM_LEDS, 2);//long strip used five
+	leds[random16(NUM_LEDS)] += CHSV(confeti[0] + random8(64), confeti[1], confeti[2]);
 }
 
-void adjustHue()
+void adjustHue(uint8_t hue)
 {
 	lcd.setCursor(9, 2);
 	lcd.print("COLOR     ");
@@ -248,7 +252,7 @@ void adjustHue()
 	lcd.print("]    ");
 }
 
-void adjustSaturation()
+void adjustSaturation(uint8_t sat)
 {
 	lcd.setCursor(9, 2);
 	lcd.print("SATURATION   ");
@@ -258,7 +262,7 @@ void adjustSaturation()
 	lcd.print("]    ");
 }
 
-void adjustBrightness()
+void adjustBrightness(uint8_t bright)
 {
 	lcd.setCursor(9, 2);
 	lcd.print("BRIGHTNESS     ");
@@ -268,7 +272,7 @@ void adjustBrightness()
 	lcd.print("]    ");
 }
 
-void adjustInterval()
+void adjustInterval(uint8_t interval)
 {
 	lcd.setCursor(9, 2);
 	lcd.print("SPEED       ");
@@ -278,7 +282,7 @@ void adjustInterval()
 	lcd.print("]    ");
 }
 
-void adjustDeltaHue()
+void adjustDeltaHue(uint8_t deltaHue)
 {
 	lcd.setCursor(9, 2);
 	lcd.print("DELTAHUE      ");
