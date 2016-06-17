@@ -7,8 +7,7 @@
 #define LCD_CHARS   20		// columns
 #define LCD_LINES    4		// rows
 #define NUM_LEDS 147		// number of leds
-#define DATA_PIN 2	
-// led data pin
+#define DATA_PIN 2			// led data pin
 #define LED_TYPE    WS2812B	// led type
 
 
