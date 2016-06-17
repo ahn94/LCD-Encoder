@@ -9,7 +9,6 @@
 #define NUM_LEDS 147		// number of leds
 #define DATA_PIN 2			// led data pin
 #define LED_TYPE    WS2812B	// led type
-// lcd preset | testing to see if branch is visible
 
 // This is an array of leds.  One item for each led in your strip.
 CRGB leds[NUM_LEDS];
@@ -26,7 +25,7 @@ uint8_t increment;		// encoder output stored here every loop
 #define NUM_MODES 4					// number of modes;
 uint8_t nOptions[] = { 4, 3, 3 , 1};	// options per mode;
 uint8_t currentOption;				// option for current mode
-uint8_t mode = 0;					// current mode
+uint8_t mode = 2;					// current mode
 uint8_t clicked = 0;				// used to % = cycle through options for current mode
 uint8_t dbclicked = 0;				// used to % = cycle through modes
 long timeOut = -1;					// timout
@@ -41,25 +40,18 @@ uint8_t solid[] = { 0, 255, 255, 255 };
 
 // rainbow setting
 // { hue, saturation, brightness, interval, deltaHue }
-uint8_t rainbow[] = { 0, 255, 180, 80, 3 };
+uint8_t rainbow[] = { 0, 255, 180, 40, 2 };
 
 // pulse setting
 // { hue, saturation, brightness, interval }
-uint8_t pulse[] = { 0, 255, 180 , 70};
+uint8_t pulse[] = { 0, 255, 180 , 35};
 
 // backlight toggle
 bool lightOn = true;
 
-
-
-
-
-
 void timerIsr() {
   encoder->service();
 }
-
-
 
 void setup()
 {
@@ -78,7 +70,6 @@ void setup()
 	lcd.begin(LCD_CHARS, LCD_LINES);
 	lcd.backlight();
 	display(0);
-	delay(1000);
 }
 
 
@@ -103,12 +94,12 @@ void loop()
 				timeOut = millis() + rainbow[3];
 				fill_rainbow(leds, NUM_LEDS, rainbow[0], rainbow[4]);
 				FastLED.setBrightness(rainbow[2]);
-				rainbow[0] += 2;
+				rainbow[0] += 1;
 				break;
 			case 3:
 				timeOut = millis() + pulse[3];
 				fill_solid(leds, NUM_LEDS, CHSV(pulse[0], pulse[1], pulse[2]));
-				pulse[0] += 2;
+				pulse[0] += 1;
 				break;
 		}
 	}
