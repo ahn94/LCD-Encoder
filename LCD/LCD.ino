@@ -2,7 +2,6 @@
 #include <ClickEncoder.h>
 #include <TimerOne.h>
 #include <LiquidCrystal_I2C.h>
-// this should finally be tracked by the second branch and not the master
 
 #define LCD_CHARS   20		// columns
 #define LCD_LINES    4		// rows
@@ -22,29 +21,33 @@ ClickEncoder *encoder;	// pointer to encoder
 uint8_t increment;		// encoder output stored here every loop
 
 // general menu variables
-#define NUM_MODES 4					// number of modes;
-uint8_t nOptions[] = { 4, 3, 3 , 1};	// options per mode;
+#define NUM_MODES 5  				// number of modes;
+uint8_t nOptions[] = { 4, 3, 3 , 1, 2};	// options per mode;
 uint8_t currentOption;				// option for current mode
-uint8_t mode = 2;					// current mode
+uint8_t mode = 4;					// current mode
 uint8_t clicked = 0;				// used to % = cycle through options for current mode
 uint8_t dbclicked = 0;				// used to % = cycle through modes
 long timeOut = -1;					// timout
+uint8_t setting = mode;
 
-// confetti color settings
-// { hue, saturation, brightness, interval }
-uint8_t confeti[] = { 87, 255, 255, 26 };
+const uint8_t MODE = 0;
+const uint8_t HUE = 1;
+const uint8_t SAT = 2;
+const uint8_t BRIGHT = 3;
+const uint8_t DELAY = 4;
+const uint8_t DELTA = 5;
 
-// solid color settings
-// { hue, saturation, brightness, interval}
-uint8_t solid[] = { 0, 255, 255, 255 };
-
-// rainbow setting
-// { hue, saturation, brightness, interval, deltaHue }
-uint8_t rainbow[] = { 0, 255, 180, 40, 2 };
-
-// pulse setting
-// { hue, saturation, brightness, interval }
-uint8_t pulse[] = { 0, 255, 180 , 35};
+// settings 
+// 0-mode, 1-hue, 2-saturation, 3-brightness, 4-interval, 5-delataHue
+uint8_t settings[][6] = 
+{
+	{ 0, 87, 255, 255, 26, 0},	// confetti
+	{ 1, 0, 255, 255, 255, 0},	// solid
+    { 2, 0, 255, 180, 40, 2},	// rainbow
+    { 3, 0, 255, 255, 49, 0},	// pulse
+	{ 0, 240, 255, 255, 26, 0},	// confetti - red
+	{ 0, 170, 255, 255, 26, 0}	// confetti blue
+};
 
 // backlight toggle
 bool lightOn = true;
@@ -81,28 +84,12 @@ void loop()
 	}
 
 	if (millis() > timeOut) {
-		switch (mode) {
-			case 0:
-				timeOut = millis() + confeti[3];
-				confetti();
-				break;
-			case 1:
-				timeOut = millis() + solid[3];
-				fill_solid(leds, NUM_LEDS, CHSV(solid[0], solid[1], solid[2]));
-				break;
-			case 2:
-				timeOut = millis() + rainbow[3];
-				fill_rainbow(leds, NUM_LEDS, rainbow[0], rainbow[4]);
-				FastLED.setBrightness(rainbow[2]);
-				rainbow[0] += 1;
-				break;
-			case 3:
-				timeOut = millis() + pulse[3];
-				fill_solid(leds, NUM_LEDS, CHSV(pulse[0], pulse[1], pulse[2]));
-				pulse[0] += 1;
-				break;
-		}
+		// sets timout from selected option
+		// passes array with mode settings to animation method
+		timeOut = millis() + settings[setting][DELAY];
+		animate(settings[setting]);
 	}
+
 	FastLED.show();
 
 	
@@ -121,6 +108,7 @@ void loop()
 			clicked = 0;
 			FastLED.setBrightness(255);
 			mode = dbclicked % NUM_MODES;
+			setting = mode;
 			display(0);
 			break;
 		case ClickEncoder::Held:
@@ -140,6 +128,27 @@ void loop()
 
 }
 
+void animate(uint8_t current[]) 
+{
+	switch (current[0]) {
+	case 0:
+		confetti();
+		break;
+	case 1:
+		fill_solid(leds, NUM_LEDS, CHSV(current[HUE], current[SAT], current[BRIGHT]));
+		break;
+	case 2:
+		fill_rainbow(leds, NUM_LEDS, current[HUE], current[DELTA]);
+		FastLED.setBrightness(current[BRIGHT]);
+		current[HUE] += 1;
+		break;
+	case 3:
+		fill_solid(leds, NUM_LEDS, CHSV(current[HUE], current[SAT], current[BRIGHT]));
+		current[HUE] += 1;
+		break;
+	}
+}
+
 void display(uint8_t incr)
 {
 	switch (mode) // mode displayer switch
@@ -148,20 +157,20 @@ void display(uint8_t incr)
 			switch (currentOption) // Options displayer switch
 			{
 				case 0: // color option
-					confeti[0] += incr;
-					adjustHue(confeti[0]); // print color display
+					settings[mode][HUE] += incr;
+					adjustHue(settings[mode][HUE]); // print color display
 					break;
 				case 1: // saturation option
-					confeti[1] += incr; 
-					adjustSaturation(confeti[1]); // print saturation display
+					settings[mode][SAT] += incr;
+					adjustSaturation(settings[mode][SAT]); // print saturation display
 					break;
 				case 2: // brightness option
-					confeti[2] += incr;
-					adjustBrightness(confeti[2]); // print brightness display 
+					settings[mode][BRIGHT] += incr;
+					adjustBrightness(settings[mode][BRIGHT]); // print brightness display 
 					break;
 				case 3: // interval option
-					confeti[3] += incr;
-					adjustInterval(confeti[3]); // print interval option
+					settings[mode][DELAY] += incr;
+					adjustInterval(settings[mode][DELAY]); // print interval option
 					break;
 			}
 			lcd.setCursor(0, 0);
@@ -171,16 +180,16 @@ void display(uint8_t incr)
 			switch (currentOption) // Options displayer switch
 			{
 				case 0: // color option
-					solid[0] += incr;
-					adjustHue(solid[0]); // print color display
+					settings[mode][HUE] += incr;
+					adjustHue(settings[mode][HUE]); // print color display
 					break;
 				case 1: // saturation option
-					solid[1] += incr;
-					adjustSaturation(solid[1]); // print saturation display
+					settings[mode][SAT] += incr;
+					adjustSaturation(settings[mode][SAT]); // print saturation display
 					break;
 				case 2: // brightness option
-					solid[2] += incr;
-					adjustBrightness(solid[2]); // print brightness display 
+					settings[mode][BRIGHT] += incr;
+					adjustBrightness(settings[mode][BRIGHT]); // print brightness display 
 					break;
 			}
 			lcd.setCursor(0, 0);
@@ -190,16 +199,16 @@ void display(uint8_t incr)
 			switch (currentOption)
 			{
 				case 0: // interval option
-					rainbow[3] += incr;
-					adjustInterval(rainbow[3]); // print interval option
+					settings[mode][DELAY] += incr;
+					adjustInterval(settings[mode][DELAY]); // print interval option
 					break;
 				case 1: // huedelta option
-					rainbow[4] += incr;
-					adjustDeltaHue(rainbow[4]); // print saturation display
+					settings[mode][DELTA] += incr;
+					adjustDeltaHue(settings[mode][DELTA]); // print saturation display
 					break;
 				case 2: // brightness option
-					rainbow[2] += incr;
-					adjustBrightness(rainbow[2]); // print brightness display 
+					settings[mode][BRIGHT] += incr;
+					adjustBrightness(settings[mode][BRIGHT]); // print brightness display 
 					break;
 			
 			}
@@ -207,11 +216,17 @@ void display(uint8_t incr)
 			lcd.print("      RAINBOW      ");
 			break;
 		case 3: // rainbow pulse
-			pulse[3] += incr;
-			adjustInterval(pulse[3]);
+			settings[mode][DELAY] += incr;
+			adjustInterval(settings[mode][DELAY]);
 			lcd.setCursor(0, 0);
 			lcd.print("       PULSE        ");
 			break;
+		case 4:
+			setting = currentOption + 4;
+			lcd.setCursor(0, 0);
+			lcd.print("      PRESETS        ");
+
+
 	}
 	// format/print second line of display
 	lcd.setCursor(0, 2);
@@ -229,8 +244,9 @@ void display(uint8_t incr)
 void confetti()
 {
 	// random colored speckles that blink in and fade smoothly
-	fadeToBlackBy(leds, NUM_LEDS, 2);//long strip used five
-	leds[random16(NUM_LEDS)] += CHSV(confeti[0] + random8(64), confeti[1], confeti[2]);
+	fadeToBlackBy(leds, NUM_LEDS, 2);//long strip used fives
+	leds[random16(NUM_LEDS)] += 
+		CHSV(settings[setting][HUE] + random8(64), settings[setting][SAT], settings[setting][BRIGHT]);
 }
 
 void adjustHue(uint8_t hue)
@@ -281,4 +297,12 @@ void adjustDeltaHue(uint8_t deltaHue)
 	lcd.print("[");
 	lcd.print(deltaHue);
 	lcd.print("]    ");
+}
+
+void adjustSetting(uint8_t setting) {
+	lcd.setCursor(9, 2);
+	lcd.print("PRESET       ");
+	lcd.print("[");
+	lcd.print(setting - 3);
+	lcd.print("]");
 }
