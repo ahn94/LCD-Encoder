@@ -225,6 +225,21 @@ void display(uint8_t incr)
 			setting = currentOption + 4;
 			lcd.setCursor(0, 0);
 			lcd.print("      PRESETS        ");
+			switch (setting) 
+			{
+				case 4:
+					lcd.setCursor(9, 2);
+					lcd.print("CONFETTI   ");
+					lcd.setCursor(9, 3);
+					lcd.print("[red]           ");
+					break;
+				case 5:
+					lcd.setCursor(9, 2);
+					lcd.print("CONFETTI   ");
+					lcd.setCursor(9, 3);
+					lcd.print("[blue]           ");
+					break;
+			}
 
 
 	}
@@ -297,12 +312,4 @@ void adjustDeltaHue(uint8_t deltaHue)
 	lcd.print("[");
 	lcd.print(deltaHue);
 	lcd.print("]    ");
-}
-
-void adjustSetting(uint8_t setting) {
-	lcd.setCursor(9, 2);
-	lcd.print("PRESET       ");
-	lcd.print("[");
-	lcd.print(setting - 3);
-	lcd.print("]");
 }
