@@ -49,7 +49,7 @@ const uint8_t DELTA = 5;
 uint8_t settings[][6] = 
 {
 	{ 0, 87, 255, 255, 26, 0},	// confetti
-	{ 1, 0, 255, 255, 255, 0},	// solid
+	{ 1, 0, 255, 255, 30, 0},	// solid
     { 2, 0, 255, 180, 40, 2},	// rainbow
     { 3, 0, 255, 255, 49, 0},	// pulse
 	{ 0, 240, 255, 255, 26, 0},	// confetti - red
@@ -134,7 +134,7 @@ void loop()
 	
 	ClickEncoder::Button b = encoder->getButton();
 
-	if (b != ClickEncoder::Open) {
+	if (b != ClickEncoder::Open && rt != LOW) {
 		switch (b) {
 		case ClickEncoder::Clicked:
 			clicked++;
@@ -142,13 +142,20 @@ void loop()
 			display(0);
 			break;
 		case ClickEncoder::DoubleClicked:
-			dbclicked++;
+			dbclicked++; 
 			currentOption = 0;
 			clicked = 0;
 			FastLED.setBrightness(255);
 			mode = dbclicked % NUM_MODES;
 			setting = mode;
-			display(0);
+			if (isLOW) {
+				fading = settings[setting][BRIGHT];
+			}
+			else {
+				fading = 0;
+			}		  
+		
+	display				(0);
 			break;
 		case ClickEncoder::Held:
 			break;
