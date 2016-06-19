@@ -9,6 +9,9 @@
 #define DATA_PIN 2			// led data pin
 #define LED_TYPE    WS2812B	// led type
 
+const int toggleRight = 12;
+const int toggleLeft = 10;
+
 // This is an array of leds.  One item for each led in your strip.
 CRGB leds[NUM_LEDS];
 
@@ -29,6 +32,10 @@ uint8_t clicked = 0;				// used to % = cycle through options for current mode
 uint8_t dbclicked = 0;				// used to % = cycle through modes
 long timeOut = -1;					// timout
 uint8_t setting = mode;
+bool isLOW;
+uint8_t fading = 0;
+
+
 
 const uint8_t MODE = 0;
 const uint8_t HUE = 1;
@@ -49,9 +56,6 @@ uint8_t settings[][6] =
 	{ 0, 170, 255, 255, 26, 0}	// confetti blue
 };
 
-// backlight toggle
-bool lightOn = true;
-
 void timerIsr() {
   encoder->service();
 }
@@ -61,7 +65,16 @@ void setup()
 	// initialize LEDS
 	LEDS.setBrightness(255);
 	FastLED.addLeds<WS2812B, DATA_PIN, GRB>(leds, NUM_LEDS).setCorrection(TypicalLEDStrip);
-	
+
+	pinMode(toggleRight, INPUT);
+	pinMode(toggleLeft, INPUT);
+	if (digitalRead(toggleLeft) == LOW) {
+		isLOW = true;
+	} else {
+		isLOW = false;
+	}
+	Serial.begin(115000);
+
 	// initialize encoder & timer
 	encoder = new ClickEncoder(A1, A0, A2, 4);
 	encoder->setAccelerationEnabled(true);
@@ -76,8 +89,34 @@ void setup()
 }
 
 
-void loop()
+void loop() 
 {
+	Serial.println("---");
+	int rt = digitalRead(toggleRight);
+	int lt = digitalRead(toggleLeft);
+
+	if (rt == LOW) {
+		lcd.off();
+	} else {
+		lcd.on();
+	}
+
+	if (lt == LOW) {
+		if (isLOW == false) {
+			isLOW = true;
+			fading = settings[setting][BRIGHT];
+		}
+		if (settings[setting][BRIGHT] - fading > 0) {
+			fading += 1;
+		}
+	}
+
+	if (lt == HIGH) {
+		if (fading > 0) {
+			fading -= 1;
+		}
+	}
+
 	increment = encoder->getValue();
 	if (increment != 0) {
 		display(increment);
@@ -112,16 +151,6 @@ void loop()
 			display(0);
 			break;
 		case ClickEncoder::Held:
-			if (lightOn) {
-				lcd.noBacklight();
-				lightOn = false;
-				delay(500);
-			} 
-			else {
-				lcd.backlight();
-				lightOn = true;
-				delay(500);
-			}
 			break;
 		}
 	}
@@ -130,20 +159,23 @@ void loop()
 
 void animate(uint8_t current[]) 
 {
+	Serial.println(current[BRIGHT]);
 	switch (current[0]) {
 	case 0:
-		confetti();
+		fadeToBlackBy(leds, NUM_LEDS, 2);//long strip used fives
+		leds[random16(NUM_LEDS)] +=
+			CHSV(current[HUE] + random8(64), current[SAT], current[BRIGHT]- fading);
 		break;
 	case 1:
-		fill_solid(leds, NUM_LEDS, CHSV(current[HUE], current[SAT], current[BRIGHT]));
+		fill_solid(leds, NUM_LEDS, CHSV(current[HUE], current[SAT], current[BRIGHT]- fading));
 		break;
 	case 2:
 		fill_rainbow(leds, NUM_LEDS, current[HUE], current[DELTA]);
-		FastLED.setBrightness(current[BRIGHT]);
+		FastLED.setBrightness(current[BRIGHT] - fading);
 		current[HUE] += 1;
 		break;
 	case 3:
-		fill_solid(leds, NUM_LEDS, CHSV(current[HUE], current[SAT], current[BRIGHT]));
+		fill_solid(leds, NUM_LEDS, CHSV(current[HUE], current[SAT], current[BRIGHT] - fading));
 		current[HUE] += 1;
 		break;
 	}
@@ -152,7 +184,7 @@ void animate(uint8_t current[])
 void display(uint8_t incr)
 {
 	switch (mode) // mode displayer switch
-	{
+	{ 
 		case 0: // confetti mode
 			switch (currentOption) // Options displayer switch
 			{
@@ -259,9 +291,7 @@ void display(uint8_t incr)
 void confetti()
 {
 	// random colored speckles that blink in and fade smoothly
-	fadeToBlackBy(leds, NUM_LEDS, 2);//long strip used fives
-	leds[random16(NUM_LEDS)] += 
-		CHSV(settings[setting][HUE] + random8(64), settings[setting][SAT], settings[setting][BRIGHT]);
+
 }
 
 void adjustHue(uint8_t hue)
